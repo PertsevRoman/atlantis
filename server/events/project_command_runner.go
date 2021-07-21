@@ -15,6 +15,8 @@ package events
 
 import (
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -262,6 +264,23 @@ func (p *DefaultProjectCommandRunner) doPolicyCheck(ctx models.ProjectCommandCon
 	}, "", nil
 }
 
+func copyFile(log logging.SimpleLogging, sourceFile, destinationFile string, perm fs.FileMode) error {
+	input, err := ioutil.ReadFile(sourceFile)
+	if err != nil {
+		log.Err("Error", err)
+		return err
+	}
+
+	err = ioutil.WriteFile(destinationFile, input, perm)
+	if err != nil {
+		log.Err("Error creating %s", destinationFile)
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
 func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (*models.PlanSuccess, string, error) {
 	// Acquire Atlantis lock for this repo/dir/workspace.
 	lockAttempt, err := p.Locker.TryLock(ctx.Log, ctx.Pull, ctx.User, ctx.Workspace, models.NewProject(ctx.Pull.BaseRepo.FullName, ctx.RepoRelDir))
@@ -280,14 +299,19 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (
 	}
 	defer unlockFn()
 
-	// Clone is idempotent so okay to run even if the repo was already cloned.
 	repoDir, hasDiverged, cloneErr := p.WorkingDir.Clone(ctx.Log, ctx.HeadRepo, ctx.Pull, ctx.Workspace)
+	// Clone is idempotent so okay to run even if the repo was already cloned.
+
+	// copy default atlantis.yaml to the repo
+	copyAtlantisYamlToWorkspace(ctx, repoDir)
+
 	if cloneErr != nil {
 		if unlockErr := lockAttempt.UnlockFn(); unlockErr != nil {
 			ctx.Log.Err("error unlocking state after plan error: %v", unlockErr)
 		}
 		return nil, "", cloneErr
 	}
+
 	projAbsPath := filepath.Join(repoDir, ctx.RepoRelDir)
 	if _, err = os.Stat(projAbsPath); os.IsNotExist(err) {
 		return nil, "", DirNotExistErr{RepoRelDir: ctx.RepoRelDir}
@@ -308,6 +332,30 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (
 		ApplyCmd:        ctx.ApplyCmd,
 		HasDiverged:     hasDiverged,
 	}, "", nil
+}
+
+// copyAtlantisYamlToWorkspace copy atlantis.yaml file to current workspace
+func copyAtlantisYamlToWorkspace(ctx models.ProjectCommandContext, repoDir string) {
+	atlantisYamlFile := "atlantis.yaml"
+
+	defaultAtlantisYaml := filepath.Join(filepath.Dir(repoDir), DefaultWorkspace, atlantisYamlFile)
+
+	_, err := os.Stat(defaultAtlantisYaml)
+
+	if err != nil {
+		ctx.Log.Err("Can't copy default atlantis.yml file %s. File not exists", defaultAtlantisYaml)
+	} else {
+		workspaceAtlantisYaml := filepath.Join(repoDir, atlantisYamlFile)
+
+		if workspaceAtlantisYaml == defaultAtlantisYaml {
+			ctx.Log.Err("Copying default atlantis.yml file %s", defaultAtlantisYaml)
+			err := copyFile(ctx.Log, defaultAtlantisYaml, workspaceAtlantisYaml, 0644)
+
+			if err != nil {
+				ctx.Log.Err("Can't copy file %s to %s", defaultAtlantisYaml, workspaceAtlantisYaml)
+			}
+		}
+	}
 }
 
 func (p *DefaultProjectCommandRunner) doApply(ctx models.ProjectCommandContext) (applyOut string, failure string, err error) {

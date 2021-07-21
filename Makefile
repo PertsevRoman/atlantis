@@ -47,8 +47,11 @@ test-coverage-html:
 	@go test -covermode atomic -coverpkg $(PKG_COMMAS) -coverprofile .cover/cover.out $(PKG)
 	go tool cover -html .cover/cover.out
 
-dev-docker:
+build-dev:
 	GOOS=linux GOARCH=amd64 go build -o atlantis .
+
+dev-docker:
+	build-dev
 	docker build -f Dockerfile.dev -t atlantis-dev .
 
 dist: ## Package up everything in static/ using go-bindata-assetfs so it can be served by a single binary

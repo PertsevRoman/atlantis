@@ -76,13 +76,10 @@ func (w *DefaultPreWorkflowHooksCommandRunner) RunPreHooks(
 	return nil
 }
 
-func (w *DefaultPreWorkflowHooksCommandRunner) runHooks(
-	ctx models.PreWorkflowHookCommandContext,
-	preWorkflowHooks []*valid.PreWorkflowHook,
-	repoDir string,
-) error {
+func (w *DefaultPreWorkflowHooksCommandRunner) runHooks(ctx models.PreWorkflowHookCommandContext, preWorkflowHooks []*valid.PreWorkflowHook, repoDir string) error {
 
 	for _, hook := range preWorkflowHooks {
+		ctx.Log.Info("Running pre-hooks in %s directory", repoDir)
 		_, err := w.PreWorkflowHookRunner.Run(ctx, hook.RunCommand, repoDir)
 
 		if err != nil {
