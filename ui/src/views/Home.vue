@@ -1,5 +1,8 @@
 <template>
   <div class="home">
+    <h1>Atlantis logo</h1>
+    <h1>MRs list</h1>
+    <h1>Projects/workspaces/locks list</h1>
   </div>
 </template>
 
