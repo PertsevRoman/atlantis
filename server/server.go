@@ -693,7 +693,7 @@ func (s *Server) Start() error {
 		switch {
 		case path == "/":
 			return true
-		case regexp.MustCompile(`^*\.(html|css|js|ico)*$`).MatchString(path):
+		case CheckStatic(path):
 			return true
 		}
 
@@ -748,6 +748,11 @@ func (s *Server) Start() error {
 		return cli.NewExitError(fmt.Sprintf("while shutting down: %s", err), 1)
 	}
 	return nil
+}
+
+// CheckStatic check path is static
+func CheckStatic(path string) bool {
+	return regexp.MustCompile(`^(/[a-zA-Z0-9_\-]*)*\.(html|css|js|ico|woff|woff2|png|js\.map|css\.map)*$`).MatchString(path)
 }
 
 // waitForDrain blocks until draining is complete.
