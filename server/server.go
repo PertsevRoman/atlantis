@@ -90,6 +90,7 @@ type Server struct {
 	VCSEventsController           *events_controllers.VCSEventsController
 	GithubAppController           *controllers.GithubAppController
 	LocksController               *controllers.LocksController
+	RepositoriesController        *controllers.RepositoriesController
 	StatusController              *controllers.StatusController
 	IndexTemplate                 templates.TemplateWriter
 	LockDetailTemplate            templates.TemplateWriter
@@ -630,6 +631,12 @@ func NewServer(userConfig UserConfig, config Config) (*Server, error) {
 		DB:                 boltdb,
 		DeleteLockCommand:  deleteLockCommand,
 	}
+	repositoriesController := &controllers.RepositoriesController{
+		AtlantisVersion: config.AtlantisVersion,
+		AtlantisURL:     parsedURL,
+		Logger:          logger,
+		DB:              boltdb,
+	}
 	eventsController := &events_controllers.VCSEventsController{
 		CommandRunner:                   commandRunner,
 		PullCleaner:                     pullClosedExecutor,
@@ -670,6 +677,7 @@ func NewServer(userConfig UserConfig, config Config) (*Server, error) {
 		ApplyLocker:                   applyLockingClient,
 		VCSEventsController:           eventsController,
 		GithubAppController:           githubAppController,
+		RepositoriesController:        repositoriesController,
 		LocksController:               locksController,
 		StatusController:              statusController,
 		IndexTemplate:                 templates.IndexTemplate,
@@ -702,6 +710,7 @@ func (s *Server) Start() error {
 	s.Router.HandleFunc("/healthz", s.Healthz).Methods("GET")
 	s.Router.HandleFunc("/status", s.StatusController.Get).Methods("GET")
 	s.Router.HandleFunc("/events", s.VCSEventsController.Post).Methods("POST")
+	s.Router.HandleFunc("/repositories", s.RepositoriesController.Get).Methods("GET")
 	s.Router.HandleFunc("/github-app/exchange-code", s.GithubAppController.ExchangeCode).Methods("GET")
 	s.Router.HandleFunc("/github-app/setup", s.GithubAppController.New).Methods("GET")
 	s.Router.HandleFunc("/apply/lock", s.LocksController.LockApply).Methods("POST").Queries()

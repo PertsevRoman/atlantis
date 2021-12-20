@@ -1,4 +1,6 @@
-import {createAction} from "@ngrx/store";
+import {createAction, props} from "@ngrx/store";
 
-export const setRepositories = createAction('[Repositories] SetRepositories')
-export const cleanRepositories = createAction('[Repositories] CleanRepositories')
+export const setRepositories = createAction('[Repositories] SetRepositories', props<{
+  repositories: Repository[],
+}>())
+export const loadRepositories = createAction('[Repositories] LoadRepositories')

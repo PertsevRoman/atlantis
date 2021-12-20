@@ -16,10 +16,13 @@ import {StoreRouterConnectingModule} from '@ngrx/router-store';
 import {EffectsModule} from '@ngrx/effects';
 import {atlantisReducer} from "./app.reducer";
 import { AppEffects } from './app.effects';
+import {HttpClientModule} from "@angular/common/http";
+import { IndexComponent } from './index/index.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    IndexComponent,
   ],
   imports: [
     InputTextModule,
@@ -29,6 +32,7 @@ import { AppEffects } from './app.effects';
     AppRoutingModule,
     SharedModule,
     MenubarModule,
+    HttpClientModule,
     MenuModule,
     StoreModule.forRoot({
       atlantis: atlantisReducer
@@ -36,6 +40,7 @@ import { AppEffects } from './app.effects';
     StoreDevtoolsModule.instrument({
       maxAge: 25,
       logOnly: environment.production,
+      autoPause: true,
     }),
     StoreRouterConnectingModule.forRoot(),
     EffectsModule.forRoot([]),

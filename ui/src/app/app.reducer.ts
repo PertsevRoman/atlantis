@@ -1,4 +1,5 @@
-import {Action, createReducer} from "@ngrx/store";
+import {Action, createReducer, on} from "@ngrx/store";
+import {setRepositories} from "./app.actions";
 
 export const initialState: AtlantisState = {
   repositories: [],
@@ -7,6 +8,10 @@ export const initialState: AtlantisState = {
 
 const _atlantisReducer = createReducer(
   initialState,
+  on(setRepositories, (state, action) => ({
+    ...state,
+    repositories: action.repositories,
+  }))
 )
 
 export function atlantisReducer(state: AtlantisState | undefined, action: Action) {
